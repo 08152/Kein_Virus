@@ -3,44 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Deep Search Engine (DuckDuckGo-Mode)</title>
-    <!-- Verknüpfung mit der CSS-Designdatei -->
+    <title>AI Deep Search Engine (GitHub Live Mode)</title>
+    <!-- Verknüpfung mit der externen CSS-Designdatei -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Die funktionale Seitenleiste -->
+    <!-- Linker Bereich: Die funktionale Seitenleiste -->
     <div class="sidebar">
         <div class="nav-group">
+            <!-- Button zum Zurücksetzen des aktuellen Chats -->
             <button class="btn new-chat-btn" onclick="resetChat()">+ Neuer Chat</button>
             
-            <!-- Suchverlauf-Überschrift und dynamischer Container -->
+            <!-- Suchverlauf-Überschrift und dynamischer Container für alte Anfragen -->
             <div style="font-size: 11px; color: #666; font-weight: bold; text-transform: uppercase; margin-top: 15px; padding-left: 12px;">Suchverlauf</div>
             <div class="history-container" id="historyBox"></div>
         </div>
         
-        <!-- Die Live-Uhr im System -->
+        <!-- Live-Uhr und Datumsanzeige im System -->
         <div class="live-clock-box">
             <div id="liveDate">Lade Datum...</div>
             <div class="live-time" id="liveTime">00:00:00</div>
         </div>
 
+        <!-- Versions-Tag für das GitHub-Deployment -->
         <div class="version-tag">AI Search Engine v3.0</div>
     </div>
 
-    <!-- Haupt-Chat-Bereich -->
+    <!-- Rechter Bereich: Das Haupt-Chatfenster -->
     <div class="main-container">
-        <div class="chat-header">KI Deep-Search Engine <span class="sub-header">● DuckDuckGo Core</span></div>
+        <div class="chat-header">KI Deep-Search Engine <span class="sub-header">● GitHub & Render Core</span></div>
+        
+        <!-- Bereich, in dem alle Nachrichten und Ladeanimationen landen -->
         <div class="chat-messages" id="chatBox">
-            <div class="message-row ai"><div class="message-box">Bereit mit unzerstörbarer DuckDuckGo-Suche! Nutze das <strong>„+“-Symbol</strong> unten, um Funktionen zu steuern oder deine Chats lokal zu sichern!</div></div>
+            <div class="message-row ai">
+                <div class="message-box">
+                    System bereit. Deine Suchmaschine läuft unblockiert im Live-Netzwerk! Nutze das <strong>„+“-Symbol</strong> unten, um Filter zu setzen oder den Chat zu exportieren.
+                </div>
+            </div>
         </div>
         
-        <!-- Eingabebereich und ausklappbares Plus-Menü -->
+        <!-- Eingabebereich und ausklappbares 3-Knopf-Plus-Menü -->
         <div class="input-area">
             <div class="input-wrapper">
-                <!-- Das Plus-Symbol zum Öffnen des Menüs -->
+                <!-- Das Plus-Symbol zum Umschalten des Pop-up-Menüs -->
                 <button class="plus-btn" id="plusBtn" onclick="toggleMenu()">+</button>
                 
-                <!-- Das 3-Knopf-Steuerungsmenü -->
+                <!-- Das 3-Knopf-Steuerungsmenü (Deep Search, Long Answer, Datei Erstellung) -->
                 <div class="attach-menu" id="attachMenu">
                     <button class="menu-btn active" id="btnDeepSearch" onclick="toggleDeepSearch()">
                         Deep Search 🔍 <div class="status-dot"></div>
@@ -53,15 +61,14 @@
                     </button>
                 </div>
 
-                <!-- Text-Eingabefeld -->
+                <!-- Das primäre Text-Eingabefeld -->
                 <input type="text" id="userInput" placeholder="Schreibe eine Nachricht..." onkeydown="if(event.key === 'Enter') handleSend()">
             </div>
         </div>
     </div>
 
-    <!-- Skripte laden (Such-Logik MUSS vor der Chat-Steuerung geladen werden) -->
+    <!-- WICHTIG: Skripte am Ende laden. Such-Schleife (1.js) MUSS vor der Oberfläche (script.js) kommen! -->
     <script src="1.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
-
