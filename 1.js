@@ -1,23 +1,24 @@
 // ====================================================================
-// COMPLETER WEB-INDEXER FÜR GITHUB PAGES (1.js)
+// UNZERSTÖRBARER WEB-INDEXER (1.js) - KEINE BLOCKADEN MEHR
 // ====================================================================
 
-// Feste Verknüpfung mit deinem Render-Backend
 const meinEigenerServer = "https://onrender.com"; 
 
 async function fetchWebResultsWithEndlessRetry(searchQuery, stepElement) {
     let attemptCounter = 1;
     
-    // Unendliche Schleife (Infinity Loop) - Sucht so lange, bis Ergebnisse da sind
     while (true) {
-        
-        // --- 1. PRIMÄRE ABFRAGE: ÜBER DEINEN EIGENEN RENDER-SERVER ---
+        // --- VORAB-CHECK: Render-Server aufwecken ---
+        if (attemptCounter === 1) {
+            fetch(meinEigenerServer).catch(() => {}); // Sendet ein Aufwach-Signal im Hintergrund
+        }
+
+        // --- 1. WEG: DEIN EIGENER RENDER-SERVER ---
         try {
-            stepElement.innerHTML = `<div class="spinner"></div> Schritt 3: Render-Indexer sucht im Internet (Versuch #${attemptCounter}...)`;
+            stepElement.innerHTML = `<div class="spinner"></div> Schritt 3: Render-Indexer wird abgefragt (Versuch #${attemptCounter}...)`;
             
-            // Timeout-Sicherung (4 Sekunden für schnelle Reaktion)
             const controller = new AbortController();
-            const id = setTimeout(() => controller.abort(), 4000);
+            const id = setTimeout(() => controller.abort(), 3000);
             
             const response = await fetch(`${meinEigenerServer}/search?q=${encodeURIComponent(searchQuery)}`, { 
                 signal: controller.signal 
@@ -27,59 +28,61 @@ async function fetchWebResultsWithEndlessRetry(searchQuery, stepElement) {
             if (response.ok) {
                 const data = await response.json();
                 if (data && data.results && data.results.length > 0) {
-                    console.log("Erfolgreich abgerufen über eigenen Render-Server.");
-                    return data; // Erfolg! Beendet die Endlosschleife sofort
+                    return data; 
                 }
             }
         } catch (e) {
-            console.warn("Render-Server antwortet nicht oder schläft noch. Schalte auf Ausfallsicherung...");
+            console.warn("Render-Server schläft noch.");
         }
 
-        // --- 2. BACKUP-ABFRAGE: DIREKTES WIKIMEDIA-NETZ (FALLS RENDER OFFLINE IST) ---
+        // --- 2. WEG: UNBLOCKIERBARER DUCKDUCKGO-HTML-PARSER (DIREKT-SUCHE) ---
         try {
-            stepElement.innerHTML = `<div class="spinner"></div> Schritt 3: Nutze Web-Ausfallsicherung (Versuch #${attemptCounter}...)`;
+            stepElement.innerHTML = `<div class="spinner"></div> Schritt 3: Nutze globale Live-Web-Suche (Versuch #${attemptCounter}...)`;
             
-            // 'origin=*' verhindert CORS-Sperren auf GitHub Pages
-            const fallbackUrl = `https://wikipedia.org{encodeURIComponent(searchQuery)}&format=json&origin=*`;
-            
-            const controller = new AbortController();
-            const id = setTimeout(() => controller.abort(), 4000);
-            
-            const response = await fetch(fallbackUrl, { signal: controller.signal });
-            clearTimeout(id);
+            // Wir nutzen ein freies, extrem stabiles CORS-Netzwerk, das speziell für Webseiten gebaut wurde
+            const response = await fetch(`https://allorigins.win{encodeURIComponent('https://duckduckgo.com' + searchQuery)}`);
             
             if (response.ok) {
-                const data = await response.json();
+                const wrapper = await response.json();
+                const htmlText = wrapper.contents;
                 
-                if (data && data.query && data.query.search && data.query.search.length > 0) {
-                    let processedResults = [];
-                    
-                    // Die besten 4 Treffer extrahieren und für script.js formatieren
-                    data.query.search.forEach((item, index) => {
-                        if (index < 4) {
-                            const cleanUrl = `https://wikipedia.org{encodeURIComponent(item.title.replace(/ /g, "_"))}`;
-                            const cleanSnippet = item.snippet.replace(/<\/?[^>]+(>|$)/g, ""); // HTML säubern
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+                const results = doc.querySelectorAll('.result');
+                
+                let processedResults = [];
+                
+                results.forEach((res, index) => {
+                    if (index < 4) { 
+                        const titleElem = res.querySelector('.result__title a');
+                        const snippetElem = res.querySelector('.result__snippet');
+                        const urlElem = res.querySelector('.result__url');
+                        
+                        if (titleElem && snippetElem) {
+                            let rawUrl = titleElem.getAttribute('href');
+                            if (rawUrl.includes('uddg=')) {
+                                rawUrl = decodeURIComponent(rawUrl.split('uddg=')[1].split('&')[0]);
+                            }
                             
                             processedResults.push({
-                                title: item.title,
-                                url: cleanUrl,
-                                content: cleanSnippet + "..."
+                                title: titleElem.innerText.trim(),
+                                url: rawUrl.startsWith('http') ? rawUrl : 'https://' + urlElem.innerText.trim(),
+                                content: snippetElem.innerText.trim()
                             });
                         }
-                    });
-                    
-                    if (processedResults.length > 0) {
-                        console.log("Erfolgreich abgerufen über Wikimedia-Ausfallsicherung.");
-                        return { results: processedResults }; // Erfolg! Beendet die Schleife
                     }
+                });
+                
+                if (processedResults.length > 0) {
+                    return { results: processedResults }; 
                 }
             }
         } catch (e) {
-            console.error(`Ausfallsicherung blockiert (Versuch #${attemptCounter}). Wiederhole...`);
+            console.error("Globale Suche blockiert, versuche nächsten Knoten...");
         }
         
         attemptCounter++;
-        // 2.5 Sekunden Pause vor der nächsten Runde, um Server-Sperren zu vermeiden
-        await new Promise(resolve => setTimeout(resolve, 2500));
+        // 2 Sekunden warten, damit der Render-Server in Ruhe aufwachen kann
+        await new Promise(resolve => setTimeout(resolve, 2000));
     }
 }
