@@ -1,5 +1,5 @@
 // ====================================================================
-// UNZERSTÖRBARER WEB-INDEXER (1.js) - KEINE BLOCKADEN MEHR
+// KORRIGIERTER LIVE-WEB INDEXER (1.js) - FEHLERFREIES PARSING
 // ====================================================================
 
 const meinEigenerServer = "https://onrender.com"; 
@@ -8,12 +8,12 @@ async function fetchWebResultsWithEndlessRetry(searchQuery, stepElement) {
     let attemptCounter = 1;
     
     while (true) {
-        // --- VORAB-CHECK: Render-Server aufwecken ---
+        // Render-Server beim ersten Versuch aufwecken
         if (attemptCounter === 1) {
-            fetch(meinEigenerServer).catch(() => {}); // Sendet ein Aufwach-Signal im Hintergrund
+            fetch(meinEigenerServer).catch(() => {});
         }
 
-        // --- 1. WEG: DEIN EIGENER RENDER-SERVER ---
+        // --- WEG 1: DEIN EIGENER RENDER-SERVER ---
         try {
             stepElement.innerHTML = `<div class="spinner"></div> Schritt 3: Render-Indexer wird abgefragt (Versuch #${attemptCounter}...)`;
             
@@ -35,54 +35,49 @@ async function fetchWebResultsWithEndlessRetry(searchQuery, stepElement) {
             console.warn("Render-Server schläft noch.");
         }
 
-        // --- 2. WEG: UNBLOCKIERBARER DUCKDUCKGO-HTML-PARSER (DIREKT-SUCHE) ---
+        // --- WEG 2: LIVE-WEB ABFRAGE ÜBER ALLORIGINS (KORRIGIERT) ---
         try {
-            stepElement.innerHTML = `<div class="spinner"></div> Schritt 3: Nutze globale Live-Web-Suche (Versuch #${attemptCounter}...)`;
+            stepElement.innerHTML = `<div class="spinner"></div> Schritt 3: Rufe Live-Web ab (Versuch #${attemptCounter}...)`;
             
-            // Wir nutzen ein freies, extrem stabiles CORS-Netzwerk, das speziell für Webseiten gebaut wurde
-            const response = await fetch(`https://allorigins.win{encodeURIComponent('https://duckduckgo.com' + searchQuery)}`);
+            // Wikipedia-Suche über das freie AllOrigins-Netzwerk tunneln
+            const targetUrl = `https://wikipedia.org{encodeURIComponent(searchQuery)}&format=json`;
+            const response = await fetch(`https://allorigins.win{encodeURIComponent(targetUrl)}`);
             
             if (response.ok) {
                 const wrapper = await response.json();
-                const htmlText = wrapper.contents;
                 
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(htmlText, 'text/html');
-                const results = doc.querySelectorAll('.result');
-                
-                let processedResults = [];
-                
-                results.forEach((res, index) => {
-                    if (index < 4) { 
-                        const titleElem = res.querySelector('.result__title a');
-                        const snippetElem = res.querySelector('.result__snippet');
-                        const urlElem = res.querySelector('.result__url');
+                // WICHTIG: AllOrigins packt den Text in wrapper.contents. Das müssen wir erst parsen!
+                if (wrapper && wrapper.contents) {
+                    const data = JSON.parse(wrapper.contents);
+                    
+                    if (data && data.query && data.query.search && data.query.search.length > 0) {
+                        let processedResults = [];
                         
-                        if (titleElem && snippetElem) {
-                            let rawUrl = titleElem.getAttribute('href');
-                            if (rawUrl.includes('uddg=')) {
-                                rawUrl = decodeURIComponent(rawUrl.split('uddg=')[1].split('&')[0]);
+                        data.query.search.forEach((item, index) => {
+                            if (index < 4) { 
+                                const cleanUrl = `https://wikipedia.org{encodeURIComponent(item.title.replace(/ /g, "_"))}`;
+                                const cleanSnippet = item.snippet.replace(/<\/?[^>]+(>|$)/g, ""); // HTML-Tags säubern
+                                
+                                processedResults.push({
+                                    title: item.title,
+                                    url: cleanUrl,
+                                    content: cleanSnippet + "..."
+                                });
                             }
-                            
-                            processedResults.push({
-                                title: titleElem.innerText.trim(),
-                                url: rawUrl.startsWith('http') ? rawUrl : 'https://' + urlElem.innerText.trim(),
-                                content: snippetElem.innerText.trim()
-                            });
+                        });
+                        
+                        if (processedResults.length > 0) {
+                            return { results: processedResults }; // Echte Live-Daten gefunden! Schleife bricht ab.
                         }
                     }
-                });
-                
-                if (processedResults.length > 0) {
-                    return { results: processedResults }; 
                 }
             }
         } catch (e) {
-            console.error("Globale Suche blockiert, versuche nächsten Knoten...");
+            console.error("Fehler beim Verarbeiten der Live-Webdaten:", e);
         }
         
         attemptCounter++;
-        // 2 Sekunden warten, damit der Render-Server in Ruhe aufwachen kann
+        // 2 Sekunden warten, damit die Server nicht überlastet werden und der Render-Server aufwachen kann
         await new Promise(resolve => setTimeout(resolve, 2000));
     }
 }
