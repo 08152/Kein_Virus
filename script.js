@@ -34,7 +34,6 @@ function toggleLongAnswer() {
     document.getElementById('btnLongAnswer').classList.toggle('active', longAnswerActive);
 }
 
-// Schließt das Menü bei Klicks außerhalb
 document.addEventListener('click', function(event) {
     if (!plusBtn.contains(event.target) && !attachMenu.contains(event.target)) {
         attachMenu.classList.remove('show');
@@ -114,7 +113,6 @@ async function handleSend() {
         let webData = null;
 
         if (deepSearchActive) {
-            // Wikipedia Begriffserklärung (Schritt 1 & 2)
             try {
                 const definitionUrl = `https://wikipedia.org{encodeURIComponent(query)}`;
                 const defResponse = await fetch(definitionUrl);
@@ -125,7 +123,7 @@ async function handleSend() {
                         if(defData.title) extractedMeaning = defData.title;
                     }
                 }
-            } catch(e) { definitionSnippet = "Erklärung temporär nicht im Live-Index verfügbar."; }
+            } catch(e) { definitionSnippet = "Erklärung temporär im Live-Knoten nicht verfügbar."; }
 
             aiRow.querySelector('.id-1').className = "step id-1 done";
             aiRow.querySelector('.id-1').innerHTML = `<span class="check-icon">✓</span> Analysierte "${query}" im Live-Web.`;
@@ -141,14 +139,14 @@ async function handleSend() {
             step3Element.className = "step id-3 active";
             step3Element.querySelector('.spinner').style.display = "block";
 
-            // RUFT DIE UNENDLICHE SUCHE AUS DER DATEI 1.JS AUF
+            // Unendliche Netzsuche aus 1.js triggern
             webData = await fetchWebResultsWithEndlessRetry(extractedMeaning, step3Element);
 
             step3Element.className = "step id-3 done";
             step3Element.innerHTML = `<span class="check-icon">✓</span> Hintergrundrecherche abgeschlossen.`;
         }
 
-        // Ergebnisse im Chat anzeigen
+        // Ergebnisse anzeigen
         let htmlOutput = "";
         let textToVoice = "";
 
@@ -166,7 +164,8 @@ async function handleSend() {
             links.forEach(item => {
                 htmlOutput += `
                     <div class="web-item">
-                        <a href="${item.url}" target="_blank">${item.title}</a>
+                        <a href="${item.url}" target="_blank" style="font-size:16px;">${item.title}</a>
+                        <div style="color:var(--accent-color); font-size:11px; margin-bottom:6px; word-break: break-all;">${item.url}</div>
                         <span style="color:#aaa; font-size:13px;">${item.content || 'Keine Beschreibung verfügbar.'}</span>
                     </div>`;
                 textToVoice += item.title + ". " + (item.content || "") + " ";
@@ -194,7 +193,7 @@ async function handleSend() {
         aiRow.querySelector('.reply-content').innerHTML = htmlOutput;
 
     } catch (error) {
-        aiRow.querySelector('.reply-content').innerHTML = `<p style="color:#ff4757;">⚠ Schwerer Systemfehler.</p>`;
+        aiRow.querySelector('.reply-content').innerHTML = `<p style="color:#ff4757;">⚠ Allgemeiner Systemfehler.</p>`;
     }
 
     chatBox.scrollTop = chatBox.scrollHeight;
