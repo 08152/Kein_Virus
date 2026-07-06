@@ -146,7 +146,7 @@ async function handleSend() {
             step3Element.innerHTML = `<span class="check-icon">✓</span> Hintergrundrecherche abgeschlossen.`;
         }
 
-        // Ergebnisse anzeigen
+        // Ergebnisse im Chat anzeigen
         let htmlOutput = "";
         let textToVoice = "";
 
@@ -173,19 +173,24 @@ async function handleSend() {
             htmlOutput += `</div>`;
         }
 
-        if (deepSearchActive) {
-            htmlOutput += `<h4>Medien-Inhalte:</h4><div class="img-grid">`;
-            const imgCount = longAnswerActive ? 3 : 1;
-            for(let i = 1; i <= imgCount; i++) {
-                htmlOutput += `<img src="https://loremflickr.com{encodeURIComponent(extractedMeaning)}?t=${i}" alt="Bild ${i}">`;
-            }
-            htmlOutput += `</div>`;
+        // --- HIER WURDE DIE NEUE KI-BILDERSTELLUNG (NO-API) INTEGRIERT ---
+        htmlOutput += `<h4>Generiertes KI-Bild:</h4><div class="img-grid">`;
+        
+        // Wir nutzen den freien Pollinations AI-Knoten. Er benötigt keinen Key und zeichnet das Bild live.
+        // Der Parameter enhanced=true schaltet automatische Qualitätsverbesserung ein.
+        const prompt1 = encodeURIComponent(extractedMeaning + " realistic highly detailed cinematic lighting");
+        const prompt2 = encodeURIComponent(extractedMeaning + " artistic digital painting concept art");
+        
+        if (longAnswerActive) {
+            // Wenn "Long Answer" aktiv ist, zeichnen wir zwei verschiedene Versionen
+            htmlOutput += `<img src="https://pollinations.ai{prompt1}?width=500&height=300&enhanced=true" alt="KI Bild 1" style="width:100%; object-fit:cover; border-radius:10px;">`;
+            htmlOutput += `<img src="https://pollinations.ai{prompt2}?width=500&height=300&enhanced=true" alt="KI Bild 2" style="width:100%; object-fit:cover; border-radius:10px;">`;
+        } else {
+            // Im Standard-Modus wird ein einzelnes, hochauflösendes Bild gerendert
+            htmlOutput += `<img src="https://pollinations.ai{prompt1}?width=600&height=350&enhanced=true" alt="Generiertes KI Bild" style="width:100%; object-fit:cover; border-radius:10px;">`;
         }
-
-        if (!deepSearchActive) {
-            htmlOutput = `<p>Direktantwort-Modus ohne Websuche.<br>Inhalt: <strong>"${query}"</strong></p>`;
-            textToVoice = `Direktantwort Modus aktiv für Begriff ${query}`;
-        }
+        htmlOutput += `</div>`;
+        // --- ENDE BILDERSTELLUNG ---
 
         const escapedText = textToVoice.replace(/"/g, '&quot;').replace(/'/g, '\\\'');
         htmlOutput += `<br><button class="tts-btn" onclick="speakText(this, '${escapedText}')">🔊 Vorlesen</button>`;
@@ -215,15 +220,16 @@ function exportChat() {
     let exportText = "=== CHAT PROTOKOLL ===\n\n";
     messages.forEach(msg => {
         if (msg.classList.contains('user')) {
-            exportText += `USER: ${msg.querySelector('.message-box').innerText}\n\n`;
-        } else {
-            exportText += `KI ASSISTANT:\n${msg.querySelector('.message-box').innerText}\n-----------\n\n`;
-        }
-    });
-
-    const blob = new Blob([exportText], { type: "text/plain;charset=utf-8" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `chat-export-${Date.now()}.txt`;
-    link.click();
+exportText += USER: ${msg.querySelector('.message-box').innerText}\n\n;
+} else {
+exportText += KI ASSISTANT:\n${msg.querySelector('.message-box').innerText}\n-----------\n\n;
 }
+});
+
+const blob = new Blob([exportText], { type: "text/plain;charset=utf-8" });
+const link = document.createElement("a");
+link.href = URL.createObjectURL(blob);
+link.download = chat-export-${Date.now()}.txt;
+link.click();
+}
+
