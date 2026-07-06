@@ -79,4 +79,37 @@ async function executeWebPipeline(searchQuery, stepElement) {
         await new Promise(resolve => setTimeout(resolve, 2000));
     }
 }
+        } // <-- Das ist die schließende Klammer vom "if (!deepSearchActive)"-Block
+
+        // KI-BILDERZEUGUNG VIA POLLINATIONS GRAPHIC-NODES (NO-API)
+        htmlOutput += `<h4>Generiertes KI-Bild:</h4><div class="img-grid">`;
+        const prompt1 = encodeURIComponent(extractedMeaning + " realistic highly detailed cinematic lighting");
+        const prompt2 = encodeURIComponent(extractedMeaning + " artistic digital painting concept art");
+        
+        if (longAnswerActive) {
+            htmlOutput += `<img src="https://pollinations.ai{prompt1}?width=500&height=300&enhanced=true" alt="KI Bild 1" style="width:100%; object-fit:cover; border-radius:10px;">`;
+            htmlOutput += `<img src="https://pollinations.ai{prompt2}?width=500&height=300&enhanced=true" alt="KI Bild 2" style="width:100%; object-fit:cover; border-radius:10px;">`;
+        } else {
+            htmlOutput += `<img src="https://pollinations.ai{prompt1}?width=600&height=350&enhanced=true" alt="Generiertes KI Bild" style="width:100%; object-fit:cover; border-radius:10px;">`;
+        }
+        htmlOutput += `</div>`;
+
+        // Sprachausgabe-Button (Hier war der Fehler aus dem Screenshot behoben!)
+        const escapedText = textToVoice.replace(/"/g, '&quot;').replace(/'/g, '\\\'');
+        htmlOutput += `<br><button class="tts-btn" onclick="speakText(this, '${escapedText}')">🔊 Vorlesen</button>`;
+
+        // Inhalt in die Chat-Sprechblase injizieren
+        if (aiRow.querySelector('.reply-content')) {
+            aiRow.querySelector('.reply-content').innerHTML = htmlOutput;
+        }
+
+    } catch (error) {
+        if (aiRow.querySelector('.reply-content')) {
+            aiRow.querySelector('.reply-content').innerHTML = `<p style="color:#ff4757;">⚠ Allgemeiner Systemfehler in der Daten-Pipeline.</p>`;
+        }
+    }
+
+    // Automatisch nach ganz unten scrollen
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
 
